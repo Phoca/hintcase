@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class HintCaseView extends RelativeLayout {
-    private static final int  DEFAULT_BACKGROUND_COLOR = 0xCC000000;
+    private static final int DEFAULT_BACKGROUND_COLOR = 0xCC000000;
     private static final int DEFAULT_HINT_BLOCK_POSITION = HintCase.HINT_BLOCK_POSITION_BOTTOM;
     private static final Shape DEFAULT_SHAPE = new RectangularShape();
     private static final ContentHolder NO_BLOCK_INFO = null;
@@ -40,6 +41,7 @@ class HintCaseView extends RelativeLayout {
     private int offsetInPx;
     private int hintBlockPosition;
     private HintCase.OnClosedListener onClosedListener;
+    private HintCase.OnStateChangedListener onStateChangedListener;
     private ShapeAnimator showShapeAnimator;
     private ShapeAnimator hideShapeAnimator;
     private ContentHolderAnimator showContentHolderAnimator;
@@ -54,6 +56,8 @@ class HintCaseView extends RelativeLayout {
     private Point navigationBarSizeIfExistAtTheBottom;
     private Point navigationBarSizeIfExistOnTheRight;
     private boolean wasPressedOnShape;
+
+    int state = HintCase.STATE_HIDDEN;
 
     public View getHintBlockView() {
         return hintBlockView;
@@ -94,19 +98,24 @@ class HintCaseView extends RelativeLayout {
         }
     }
 
-    private void performShow() {
+    private void performShow(boolean animate) {
+        if (state == HintCase.STATE_SHOW || state == HintCase.STATE_SHOWN) return;
+
         parent.addView(this, parentIndex);
-        if (showShapeAnimator != ShapeAnimator.NO_ANIMATOR) {
+        if (animate && showShapeAnimator != ShapeAnimator.NO_ANIMATOR) {
             ValueAnimator animator = showShapeAnimator.getAnimator(this, shape, new ShapeAnimator.OnFinishListener() {
                 @Override
                 public void onFinish() {
                     performShowBlocks();
+                    setStateInternal(HintCase.STATE_SHOWN);
                 }
             });
             animator.start();
+            setStateInternal(HintCase.STATE_SHOW);
         } else {
             shape.setMinimumValue();
             performShowBlocks();
+            setStateInternal(HintCase.STATE_SHOWN);
         }
     }
 
@@ -128,14 +137,15 @@ class HintCaseView extends RelativeLayout {
             if (existHintBlock()) {
                 getHintBlockView().setAlpha(1);
             }
-            for (View view: extraBlockViews) {
+            for (View view : extraBlockViews) {
                 view.setAlpha(1);
             }
         } else {
             animatorSet.playTogether(animators);
             animatorSet.addListener(new Animator.AnimatorListener() {
                 @Override
-                public void onAnimationStart(Animator animation) { }
+                public void onAnimationStart(Animator animation) {
+                }
 
                 @Override
                 public void onAnimationEnd(Animator animation) {
@@ -152,24 +162,31 @@ class HintCaseView extends RelativeLayout {
                 }
 
                 @Override
-                public void onAnimationCancel(Animator animation) { }
+                public void onAnimationCancel(Animator animation) {
+                }
 
                 @Override
-                public void onAnimationRepeat(Animator animation) { }
+                public void onAnimationRepeat(Animator animation) {
+                }
             });
             animatorSet.start();
         }
     }
 
-    void performHide() {
+    void performHide(boolean animate) {
+        if (state == HintCase.STATE_HIDDEN || state == HintCase.STATE_HIDE) return;
+
         List<Animator> animators = new ArrayList<>();
-        if (hideContentHolderAnimator != ContentHolderAnimator.NO_ANIMATOR) {
+        if (animate && hideContentHolderAnimator != ContentHolderAnimator.NO_ANIMATOR) {
+            setStateInternal(HintCase.STATE_HIDE);
             animators.add(hideContentHolderAnimator.getAnimator(hintBlockView));
         } else {
             if (existHintBlock()) {
                 getHintBlockView().setAlpha(0);
             }
+            setStateInternal(HintCase.STATE_HIDDEN);
         }
+
         if (!hideExtraContentHolderAnimators.isEmpty()) {
             for (int i = 0; i < extraBlocks.size(); i++) {
                 ContentHolderAnimator animator = hideExtraContentHolderAnimators.get(i);
@@ -180,7 +197,7 @@ class HintCaseView extends RelativeLayout {
         }
         AnimatorSet animatorSet = new AnimatorSet();
         if (animators.isEmpty()) {
-            for (View view: extraBlockViews) {
+            for (View view : extraBlockViews) {
                 view.setAlpha(0);
             }
             performHideShape();
@@ -188,18 +205,21 @@ class HintCaseView extends RelativeLayout {
             animatorSet.playTogether(animators);
             animatorSet.addListener(new Animator.AnimatorListener() {
                 @Override
-                public void onAnimationStart(Animator animation) { }
-
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                   performHideShape();
+                public void onAnimationStart(Animator animation) {
                 }
 
                 @Override
-                public void onAnimationCancel(Animator animation) { }
+                public void onAnimationEnd(Animator animation) {
+                    performHideShape();
+                }
 
                 @Override
-                public void onAnimationRepeat(Animator animation) { }
+                public void onAnimationCancel(Animator animation) {
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+                }
             });
             animatorSet.start();
         }
@@ -217,7 +237,8 @@ class HintCaseView extends RelativeLayout {
             animatorSet.playSequentially(animators);
             animatorSet.addListener(new Animator.AnimatorListener() {
                 @Override
-                public void onAnimationStart(Animator animation) { }
+                public void onAnimationStart(Animator animation) {
+                }
 
                 @Override
                 public void onAnimationEnd(Animator animation) {
@@ -225,10 +246,12 @@ class HintCaseView extends RelativeLayout {
                 }
 
                 @Override
-                public void onAnimationCancel(Animator animation) { }
+                public void onAnimationCancel(Animator animation) {
+                }
 
                 @Override
-                public void onAnimationRepeat(Animator animation) { }
+                public void onAnimationRepeat(Animator animation) {
+                }
             });
             animatorSet.start();
         }
@@ -237,6 +260,7 @@ class HintCaseView extends RelativeLayout {
     private void close() {
         removeView();
         clearData();
+        setStateInternal(HintCase.STATE_HIDDEN);
         if (onClosedListener != null) {
             onClosedListener.onClosed();
         }
@@ -363,8 +387,8 @@ class HintCaseView extends RelativeLayout {
             areas[HintCase.HINT_BLOCK_POSITION_RIGHT] = parent.getRight() - shape.getRight();
             areas[HintCase.HINT_BLOCK_POSITION_BOTTOM] = parent.getBottom() - shape.getBottom();
             hintBlockPosition = HintCase.HINT_BLOCK_POSITION_LEFT;
-            for(int i = 1; i < areas.length; i++) {
-                if(areas[i] >= areas[hintBlockPosition]) {
+            for (int i = 1; i < areas.length; i++) {
+                if (areas[i] >= areas[hintBlockPosition]) {
                     hintBlockPosition = i;
                 }
             }
@@ -374,6 +398,11 @@ class HintCaseView extends RelativeLayout {
     public void setOnClosedListener(HintCase.OnClosedListener onClickListener) {
         this.onClosedListener = onClickListener;
     }
+
+    public void setOnStateChangedListener(HintCase.OnStateChangedListener listener) {
+        this.onStateChangedListener = listener;
+    }
+
 
     public void setTargetInfo(View view, Shape shape, int offsetInPx, boolean isTargetClickable) {
         this.targetView = view;
@@ -396,9 +425,9 @@ class HintCaseView extends RelativeLayout {
         this.closeOnTouch = closeOnTouch;
     }
 
-    public void show() {
+    public void show(boolean animate) {
         initializeView();
-        performShow();
+        performShow(animate);
     }
 
     public void initializeView() {
@@ -444,7 +473,7 @@ class HintCaseView extends RelativeLayout {
         if (hintBlock != NO_BLOCK_INFO) {
             hintBlock.onLayout();
         }
-        for (ContentHolder extraBlock: extraBlocks) {
+        for (ContentHolder extraBlock : extraBlocks) {
             extraBlock.onLayout();
         }
     }
@@ -452,21 +481,21 @@ class HintCaseView extends RelativeLayout {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         boolean consumeTouchEvent = true;
-        switch(event.getAction()){
+        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 wasPressedOnShape = shape.isTouchEventInsideTheHint(event);
                 break;
             case MotionEvent.ACTION_MOVE:
-                if(!shape.isTouchEventInsideTheHint(event))
+                if (!shape.isTouchEventInsideTheHint(event))
                     wasPressedOnShape = false;
                 break;
             case MotionEvent.ACTION_UP:
                 if (closeOnTouch) {
-                    performHide();
+                    if(state == HintCase.STATE_SHOWN) performHide(true);
                 }
-                if(targetView != null
+                if (targetView != null
                         && isTargetClickable
-                        && wasPressedOnShape && shape.isTouchEventInsideTheHint(event)){
+                        && wasPressedOnShape && shape.isTouchEventInsideTheHint(event)) {
                     targetView.performClick();
                 }
                 break;
@@ -494,5 +523,23 @@ class HintCaseView extends RelativeLayout {
     @Override
     public void setBackgroundColor(int color) {
         backgroundColor = color;
+    }
+
+    public void setState(int newState) {
+        if (newState == HintCase.STATE_SHOW && state == HintCase.STATE_HIDDEN) {
+            show(true);
+        } else if (newState == HintCase.STATE_SHOWN && state == HintCase.STATE_HIDDEN) {
+            show(false);
+        } else if (newState == HintCase.STATE_HIDE && state == HintCase.STATE_SHOWN) {
+            performHide(true);
+        } else if (newState == HintCase.STATE_HIDDEN && state == HintCase.STATE_SHOWN) {
+            performHide(false);
+        }
+    }
+
+    private void setStateInternal(int newState) {
+        state = newState;
+        Log.d("BAUM", "new state: " + newState);
+        if (onStateChangedListener != null) onStateChangedListener.onStateChanged(newState);
     }
 }

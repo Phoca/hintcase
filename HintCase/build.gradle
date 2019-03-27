@@ -26,4 +26,5 @@ dependencies {
     implementation libraryDependencies.AppCompat
 }
 
-group='com.github.Phoca'
+group = 'com.github.Phoca'
+version= globalConfiguration.getAt("androidVersionNameMainLibrary")

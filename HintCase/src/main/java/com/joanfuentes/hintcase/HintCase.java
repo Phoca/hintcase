@@ -19,6 +19,11 @@ public class HintCase {
     public static final boolean TARGET_IS_CLICKABLE = true;
     public static final boolean TARGET_IS_NOT_CLICKABLE = false;
 
+    public static final int STATE_HIDDEN = 0;
+    public static final int STATE_HIDE = 1;
+    public static final int STATE_SHOWN = 2;
+    public static final int STATE_SHOW = 3;
+
     private HintCaseView hintCaseView;
     private Context context;
 
@@ -26,13 +31,13 @@ public class HintCase {
         return this.hintCaseView.getShape();
     }
 
-    public void hide() {
-        this.hintCaseView.performHide();
-        this.hintCaseView = null;
-    }
-
     public interface OnClosedListener {
         void onClosed();
+    }
+
+    @FunctionalInterface
+    public interface OnStateChangedListener {
+        void onStateChanged(int state);
     }
 
     public HintCase(View view) {
@@ -52,7 +57,7 @@ public class HintCase {
         return setCompleteTarget(target, new RectangularShape(), offsetInPx, TARGET_IS_CLICKABLE);
     }
 
-    public HintCase setTarget(View target,  @DimenRes int offsetResId) {
+    public HintCase setTarget(View target, @DimenRes int offsetResId) {
         int offsetInPx = context.getResources().getDimensionPixelSize(offsetResId);
         return setCompleteTarget(target, new RectangularShape(), offsetInPx, TARGET_IS_CLICKABLE);
     }
@@ -141,7 +146,7 @@ public class HintCase {
     }
 
     public HintCase setExtraBlock(ContentHolder contentHolder, ContentHolderAnimator showContentHolderAnimator,
-                                             ContentHolderAnimator hideContentHolderAnimator) {
+                                  ContentHolderAnimator hideContentHolderAnimator) {
         this.hintCaseView.setExtraBlock(contentHolder, showContentHolderAnimator, hideContentHolderAnimator);
         return this;
     }
@@ -168,8 +173,13 @@ public class HintCase {
     }
 
     public HintCase setOnClosedListener(OnClosedListener onClosedListener) {
-            this.hintCaseView.setOnClosedListener(onClosedListener);
-            return this;
+        this.hintCaseView.setOnClosedListener(onClosedListener);
+        return this;
+    }
+
+    public HintCase setOnStateChangedListener(OnStateChangedListener listener) {
+        this.hintCaseView.setOnStateChangedListener(listener);
+        return this;
     }
 
     public int getBlockInfoPosition() {
@@ -178,6 +188,22 @@ public class HintCase {
 
     public void show() {
         //TODO: Add controls to have minimum info.
-        this.hintCaseView.show();
+        this.hintCaseView.show(true);
+    }
+
+    public void hide() {
+        this.hintCaseView.performHide(true);
+        this.hintCaseView = null;
+    }
+
+    public int getState() {
+        return hintCaseView.state;
+    }
+
+    public void setState(int state) {
+        if (state < 0 || state > 3)
+            throw new IllegalArgumentException("State must be one of STATE_HIDDEN, STATE_HIDE, STATE_SHOW or STATE_SHOWN");
+
+        hintCaseView.setState(state);
     }
 }
