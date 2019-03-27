@@ -31,20 +31,17 @@ allprojects {
 ext {
     //Android
     androidApplicationId = "com.joanfuentes"
-    androidBuildToolsVersion = "24.0.2"
+    androidBuildToolsVersion = "28.0.3"
     androidMinSdkVersion = 14
-    androidTargetSdkVersion = 24
-    androidCompileSdkVersion = 24
+    androidTargetSdkVersion = 28
+    androidCompileSdkVersion = 28
     androidVersionCodeExample = 5
     androidVersionNameExample = "1.0.4"
     androidVersionCodeMainLibrary = 5
     androidVersionNameMainLibrary = "1.0.4"
-    androidVersionCodeAssetsLibrary = 5
-    androidVersionNameAssetsLibrary = "1.0.4"
 
     //Libraries Versions
-    androidSupportVersion = "24.2.1"
-    butterKnifeVersion = "7.0.1"
+    androidSupportVersion = "28.0.0"
     glideVersion = "3.7.0"
 
     //JCenter
@@ -61,15 +58,11 @@ ext {
             AppCompat: "com.android.support:appcompat-v7:${androidSupportVersion}",
             DesignLibrary: "com.android.support:design:${androidSupportVersion}",
             SupportLibrary: "com.android.support:support-v4:${androidSupportVersion}",
-            GlideLibrary: "com.github.bumptech.glide:glide:${glideVersion}",
-            ButterKnife: "com.jakewharton:butterknife:${butterKnifeVersion}",
+            GlideLibrary: "com.github.bumptech.glide:glide:${glideVersion}"
     ]
 
     mainLibraryDependencies = [
             AndroidAnnotations: "com.android.support:support-annotations:${androidSupportVersion}",
-    ]
-
-    assetsLibraryDependencies = [
             AppCompat: "com.android.support:appcompat-v7:${androidSupportVersion}",
     ]
 }

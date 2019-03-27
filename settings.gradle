@@ -1,1 +1,1 @@
-include ':app', ':HintCase', ':HintCaseAssets'
+include ':app', ':HintCase'

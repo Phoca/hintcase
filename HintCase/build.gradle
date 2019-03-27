@@ -1,5 +1,5 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.novoda.bintray-release'
+apply plugin: 'com.github.dcendents.android-maven'
 
 def globalConfiguration = rootProject.extensions.getByName("ext")
 
@@ -22,20 +22,8 @@ android {
 
 dependencies {
     def libraryDependencies = globalConfiguration.mainLibraryDependencies
-    compile libraryDependencies.AndroidAnnotations
+    implementation libraryDependencies.AndroidAnnotations
+    implementation libraryDependencies.AppCompat
 }
 
-publish {
-    Properties properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
-    userOrg = globalConfiguration.getAt("jcenterUserOrganization")
-    groupId = globalConfiguration.getAt("jcenterGroupId")
-    artifactId = globalConfiguration.getAt("jcenterArtifactIdMainLibrary")
-    publishVersion = globalConfiguration.getAt("androidVersionNameMainLibrary")
-    desc = globalConfiguration.getAt("jcenterDescriptionMainLibrary")
-    website = globalConfiguration.getAt("jcenterWebsite")
-    repository = globalConfiguration.getAt("jcenterRepository")
-    bintrayUser = properties.getProperty("bintrayUser")
-    bintrayKey = properties.getProperty("bintrayKey")
-}
+group='com.github.Phoca'
